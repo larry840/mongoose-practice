@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const fs = require("fs");
 
 app.set("view engine", "ejs");
 
@@ -36,22 +37,36 @@ const studentSchema = new Schema({
     },
 });
 
+studentSchema.statics.findAllMajorStudents = function (major) {
+    return this.find({ major: major }).exec();
+};
+
 studentSchema.methods.printTotalScholarship = function () {
     return this.scholarship.merit + this.scholarship.other;
 };
 
+studentSchema.pre("save", () => {
+    fs.writeFile("record.txt", "A new data will be saved...", e => {
+        if (e) throw e;
+    });
+});
+
 const Student = mongoose.model("Student", studentSchema);
 
-Student.find()
-    .exec()
-    .then(arr => {
-        arr.forEach(student => {
-            console.log(
-                student.name +
-                    "的總獎學金金額是" +
-                    student.printTotalScholarship()
-            );
-        });
+let newStudent = new Student({
+    name: "小明",
+    age: 30,
+    major: "Computer Science",
+    scholarship: {
+        merit: 5000,
+        other: 1000,
+    },
+});
+
+newStudent
+    .save()
+    .then(data => {
+        console.log("資料已經儲存");
     })
     .catch(e => {
         console.log(e);

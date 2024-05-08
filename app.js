@@ -15,21 +15,43 @@ mongoose
     });
 
 const studentSchema = new Schema({
-    name: String,
+    name: { type: String, required: true, maxlength: 25 },
     age: { type: Number, min: [0, "年齡不能小於0"] },
-    major: String,
+    major: {
+        type: String,
+        required: function () {
+            return this.scholarship.merit >= 3000;
+        },
+        enum: [
+            "Chemistry",
+            "Computer Science",
+            "Mathematics",
+            "Civil Engineering",
+            "undecided",
+        ],
+    },
     scholarship: {
-        merit: Number,
-        other: Number,
+        merit: { type: Number, default: 0 },
+        other: { type: Number, default: 0 },
     },
 });
+
+studentSchema.methods.printTotalScholarship = function () {
+    return this.scholarship.merit + this.scholarship.other;
+};
 
 const Student = mongoose.model("Student", studentSchema);
 
 Student.find()
     .exec()
-    .then(data => {
-        console.log(data);
+    .then(arr => {
+        arr.forEach(student => {
+            console.log(
+                student.name +
+                    "的總獎學金金額是" +
+                    student.printTotalScholarship()
+            );
+        });
     })
     .catch(e => {
         console.log(e);
